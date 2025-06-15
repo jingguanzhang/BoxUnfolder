@@ -1,5 +1,6 @@
 # BoxUnfolder
 一个纸箱刀版图展开图生成器
+在线使用：https://jingguanzhang.github.io/BoxUnfolder/
 
 # 📦 纸箱刀版展开图生成器
 
