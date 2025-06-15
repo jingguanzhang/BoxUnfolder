@@ -1,8 +1,8 @@
 # BoxUnfolder
-一个纸箱刀版图展开图生成器
+一个在线纸箱刀版图展开生成器
 在线使用：https://jingguanzhang.github.io/BoxUnfolder/
 
-# 📦 纸箱刀版展开图生成器
+# 📦 在线纸箱刀版展开图生成器
 
 一个现代化的在线工具，用于生成标准纸箱的刀版展开图。输入纸箱的长、宽、高尺寸，即可快速生成准确的SVG格式展开图，适用于纸箱模切等生产工艺，生成的svg导入到AI、cdr软件中用于排版设计。
 ![image](https://github.com/user-attachments/assets/887f7ea6-b744-4915-b9bb-ac1a5d85f54b)
