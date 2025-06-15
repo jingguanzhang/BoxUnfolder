@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>在线纸箱刀版展开图生成器</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        color: #333;
+      }
+
+      .container {
+        display: flex;
+        min-height: 100vh;
+        gap: 20px;
+        padding: 20px;
+      }
+
+      .left-panel {
+        flex: 0 0 350px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        height: fit-content;
+        position: sticky;
+        top: 20px;
+      }
+
+      .right-panel {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: calc(100vh - 40px);
+      }
+
+      h1 {
+        color: #4a5568;
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 30px;
+        text-align: center;
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .controls {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .input-group label {
+        font-weight: 600;
+        color: #4a5568;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+
+      .input-wrapper input {
+        flex: 1;
+        padding: 12px 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        background: #f8fafc;
+      }
+
+      .input-wrapper input:focus {
+        outline: none;
+        border-color: #667eea;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+
+      .input-wrapper .unit {
+        position: absolute;
+        right: 16px;
+        color: #718096;
+        font-size: 14px;
+        font-weight: 500;
+        pointer-events: none;
+      }
+
+      .button-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 30px;
+      }
+
+      button {
+        padding: 14px 20px;
+        border: none;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .btn-primary {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+      }
+
+      .btn-secondary {
+        background: linear-gradient(45deg, #48bb78, #38a169);
+        color: white;
+        box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
+      }
+
+      .btn-secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(72, 187, 120, 0.6);
+      }
+
+      #svg-container {
+        border: 2px dashed #e2e8f0;
+        border-radius: 16px;
+        background: linear-gradient(45deg, #f8fafc, #ffffff);
+        padding: 20px;
+        min-height: 400px;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+      }
+
+      #svg-container:has(svg) {
+        border-style: solid;
+        border-color: #cbd5e0;
+        background: #ffffff;
+      }
+
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        color: #a0aec0;
+        font-size: 18px;
+        text-align: center;
+      }
+
+      .empty-state-icon {
+        width: 64px;
+        height: 64px;
+        background: linear-gradient(45deg, #e2e8f0, #cbd5e0);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+      }
+
+      svg {
+        max-width: 100%;
+        max-height: 70vh;
+        height: auto;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .info-card {
+        background: linear-gradient(45deg, #edf2f7, #f7fafc);
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 20px;
+        border-left: 4px solid #667eea;
+      }
+
+      .info-card h3 {
+        color: #4a5568;
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      .info-card p {
+        color: #718096;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .dimensions-info {
+        background: linear-gradient(45deg, #e6fffa, #f0fff4);
+        border-radius: 12px;
+        padding: 15px;
+        margin-top: 15px;
+        border-left: 4px solid #48bb78;
+      }
+
+      .dimensions-info h4 {
+        color: #2d3748;
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      .dimensions-info .dim-values {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        font-size: 12px;
+        color: #4a5568;
+      }
+
+      @media (max-width: 1024px) {
+        .container {
+          flex-direction: column;
+        }
+
+        .left-panel {
+          flex: none;
+          position: static;
+        }
+
+        .right-panel {
+          min-height: 400px;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 10px;
+          gap: 10px;
+        }
+
+        .left-panel,
+        .right-panel {
+          padding: 20px;
+        }
+
+        h1 {
+          font-size: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="left-panel">
+        <h1>纸箱刀版展开图生成器</h1>
+
+        <div class="controls">
+          <div class="input-group">
+            <label for="length">长度 (L)</label>
+            <div class="input-wrapper">
+              <input type="number" id="length" value="300" />
+              <span class="unit">mm</span>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="width">宽度 (W)</label>
+            <div class="input-wrapper">
+              <input type="number" id="width" value="200" />
+              <span class="unit">mm</span>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="height">高度 (H)</label>
+            <div class="input-wrapper">
+              <input type="number" id="height" value="150" />
+              <span class="unit">mm</span>
+            </div>
+          </div>
+
+          <div class="button-group">
+            <button class="btn-primary" onclick="generateBoxCutout()">生成展开图</button>
+            <button class="btn-secondary" onclick="exportSvg()">导出SVG</button>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <h3>使用说明</h3>
+          <p>输入纸箱的长、宽、高尺寸，点击"生成展开图"即可生成标准纸箱刀版图。生成后可导出为SVG格式,导入到AI、cdr软件中用于排版设计。</p>
+        </div>
+
+        <div class="dimensions-info" id="dimensions-info" style="display: none;">
+          <h4>展开图尺寸</h4>
+          <div class="dim-values">
+            <div>总宽度: <span id="total-width">0</span>mm</div>
+            <div>总高度: <span id="total-height">0</span>mm</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="right-panel">
+        <div id="svg-container">
+          <div class="empty-state">
+            <div class="empty-state-icon">📦</div>
+            <p>点击"生成展开图"开始创建您的纸箱刀版图</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const svgContainer = document.getElementById("svg-container");
+      const defaultPadding = 20; // 显示用的内边距，不影响实际尺寸
+      
+      // 全局变量存储当前的实际尺寸（毫米）
+      let actualTotalWidth = 0;
+      let actualTotalHeight = 0;
+
+      function generateBoxCutout() {
+        const length = parseFloat(document.getElementById("length").value);
+        const width = parseFloat(document.getElementById("width").value);
+        const height = parseFloat(document.getElementById("height").value);
+
+        if (isNaN(length) || isNaN(width) || isNaN(height) || length <= 0 || width <= 0 || height <= 0) {
+          alert("请输入有效的正数尺寸！");
+          return;
+        }
+
+        svgContainer.innerHTML = "";
+
+        const flapLength = width / 2;
+        const tabWidth = 15;
+
+        // 计算实际的总尺寸（毫米）
+        actualTotalWidth = width + length + width + length + tabWidth;
+        actualTotalHeight = flapLength + height + flapLength;
+
+        // 显示尺寸信息
+        document.getElementById("total-width").textContent = actualTotalWidth.toFixed(1);
+        document.getElementById("total-height").textContent = actualTotalHeight.toFixed(1);
+        document.getElementById("dimensions-info").style.display = "block";
+
+        // 计算显示用的缩放比例（用于在屏幕上显示）
+        const maxDisplayWidth = 800;
+        const maxDisplayHeight = 600;
+        const scaleX = maxDisplayWidth / actualTotalWidth;
+        const scaleY = maxDisplayHeight / actualTotalHeight;
+        const displayScale = Math.min(scaleX, scaleY, 1); // 不要放大，只缩小
+
+        // 显示用的尺寸
+        const displayWidth = actualTotalWidth * displayScale + defaultPadding * 2;
+        const displayHeight = actualTotalHeight * displayScale + defaultPadding * 2;
+
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        
+        // 设置SVG的实际尺寸为毫米单位
+        svg.setAttribute("width", `${actualTotalWidth}mm`);
+        svg.setAttribute("height", `${actualTotalHeight}mm`);
+        svg.setAttribute("viewBox", `0 0 ${actualTotalWidth} ${actualTotalHeight}`);
+        
+        // 为了在网页中正确显示，设置style
+        svg.style.width = `${displayWidth}px`;
+        svg.style.height = `${displayHeight}px`;
+        svg.style.backgroundColor = "#fff";
+
+        const strokeColor = "#333";
+        const foldColor = "#999";
+        const cutStrokeWidth = 0.5;
+        const foldStrokeWidth = 0.8;
+        const dashArray = "5,5";
+
+        const drawRect = (x, y, w, h, isFold = false) => {
+          const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+          rect.setAttribute("x", x);
+          rect.setAttribute("y", y);
+          rect.setAttribute("width", w);
+          rect.setAttribute("height", h);
+          rect.setAttribute("fill", "#D2B48C");
+          rect.setAttribute("stroke", isFold ? foldColor : strokeColor);
+          rect.setAttribute("stroke-width", isFold ? foldStrokeWidth : cutStrokeWidth);
+          if (isFold) {
+            rect.setAttribute("stroke-dasharray", dashArray);
+          }
+          return rect;
+        };
+
+        const drawLine = (x1, y1, x2, y2, isFold = false) => {
+          const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          line.setAttribute("x1", x1);
+          line.setAttribute("y1", y1);
+          line.setAttribute("x2", x2);
+          line.setAttribute("y2", y2);
+          line.setAttribute("stroke", isFold ? foldColor : strokeColor);
+          line.setAttribute("stroke-width", isFold ? foldStrokeWidth : cutStrokeWidth);
+          if (isFold) {
+            line.setAttribute("stroke-dasharray", dashArray);
+          }
+          return line;
+        };
+
+        const drawPolygon = (points, isFold = false) => {
+          const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+          const pointsStr = points.map((p) => `${p.x},${p.y}`).join(" ");
+          polygon.setAttribute("points", pointsStr);
+          polygon.setAttribute("fill", "#D2B48C");
+          polygon.setAttribute("stroke", isFold ? foldColor : strokeColor);
+          polygon.setAttribute("stroke-width", isFold ? foldStrokeWidth : cutStrokeWidth);
+          if (isFold) {
+            polygon.setAttribute("stroke-dasharray", dashArray);
+          }
+          return polygon;
+        };
+
+        // 使用实际的毫米尺寸进行绘制
+        let currentX = 0;
+        let currentY = 0;
+
+        const bottomFlapY = currentY;
+        const bodyY = currentY + flapLength;
+        const topFlapY = currentY + flapLength + height;
+
+        // 绘制底部翻盖
+        let pX = currentX;
+        let pY = bottomFlapY;
+        let rect = drawRect(pX, pY, width-2.5, flapLength);
+        svg.appendChild(rect);
+        svg.appendChild(drawLine(pX + width, pY, pX + width, pY + flapLength, true));
+
+        pX = currentX + width;
+        rect = drawRect(pX+2.5, pY, length-5, flapLength);
+        svg.appendChild(rect);
+        svg.appendChild(drawLine(pX + length, pY, pX + length, pY + flapLength, true));
+
+        pX = currentX + width + length;
+        rect = drawRect(pX+2.5, pY, width-5, flapLength);
+        svg.appendChild(rect);
+        svg.appendChild(drawLine(pX + width, pY, pX + width, pY + flapLength, true));
+
+        pX = currentX + width + length + width;
+        rect = drawRect(pX+2.5, pY, length-2.5, flapLength);
+        svg.appendChild(rect);
+
+        // 绘制主体部分
+        pX = currentX;
+        pY = bodyY;
+        rect = drawRect(pX, pY, width, height);
+        svg.appendChild(rect);
+        svg.appendChild(drawLine(pX + width, pY, pX + width, pY + height, true));
+
+        pX = currentX + width;
+        rect = drawRect(pX, pY, length, height);
+        svg.appendChild(rect);
+        svg.appendChild(drawLine(pX + length, pY, pX + length, pY + height, true));
+
+        pX = currentX + width + length;
+        rect = drawRect(pX, pY, width, height);
+        svg.appendChild(rect);
+        svg.appendChild(drawLine(pX + width, pY, pX + width, pY + height, true));
+
+        pX = currentX + width + length + width;
+        rect = drawRect(pX, pY, length, height);
+        svg.appendChild(rect);
+
+        // 绘制粘合耳
+        pX = currentX + width + length + width + length;
+        pY = bodyY;
+        const pointsTab = [
+          { x: pX, y: pY },
+          { x: pX + tabWidth, y: pY + tabWidth / 2 },
+          { x: pX + tabWidth, y: pY + height - tabWidth / 2 },
+          { x: pX, y: pY + height },
+        ];
+        svg.appendChild(drawPolygon(pointsTab));
+        svg.appendChild(drawLine(pX, pY, pX, pY + height, true));
+
+        // 绘制顶部翻盖
+        pX = currentX;
+        pY = topFlapY;
+        rect = drawRect(pX, pY, width-2.5, flapLength);
+        svg.appendChild(rect);
+        svg.appendChild(drawLine(pX + width, pY, pX + width, pY + flapLength, true));
+
+        pX = currentX + width;
+        rect = drawRect(pX+2.5, pY, length-5, flapLength);
+        svg.appendChild(rect);
+        svg.appendChild(drawLine(pX + length, pY, pX + length, pY + flapLength, true));
+
+        pX = currentX + width + length;
+        rect = drawRect(pX+2.5, pY, width-5, flapLength);
+        svg.appendChild(rect);
+        svg.appendChild(drawLine(pX + width, pY, pX + width, pY + flapLength, true));
+
+        pX = currentX + width + length + width;
+        rect = drawRect(pX+2.5, pY, length-2.5, flapLength);
+        svg.appendChild(rect);
+
+        // 绘制水平折叠线
+        svg.appendChild(drawLine(currentX, bodyY, currentX + width + length + width + length, bodyY, true));
+        svg.appendChild(drawLine(currentX, topFlapY, currentX + width + length + width + length, topFlapY, true));
+
+        svgContainer.appendChild(svg);
+      }
+
+      function exportSvg() {
+        const svgElement = svgContainer.querySelector("svg");
+        if (!svgElement) {
+          alert("请先生成展开图！");
+          return;
+        }
+
+        // 克隆SVG元素
+        const clonedSvg = svgElement.cloneNode(true);
+        
+        // 移除显示用的样式，确保导出的SVG使用实际尺寸
+        clonedSvg.style.width = '';
+        clonedSvg.style.height = '';
+        
+        // 添加标准的SVG声明和样式
+        const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+     width="${actualTotalWidth}mm" height="${actualTotalHeight}mm" 
+     viewBox="0 0 ${actualTotalWidth} ${actualTotalHeight}"
+     style="background-color: white;">
+  <defs>
+    <style type="text/css">
+      <![CDATA[
+        .cut-line { stroke: #333; stroke-width: 1.5; fill: none; }
+        .fold-line { stroke: #999; stroke-width: 0.8; stroke-dasharray: 5,5; fill: none; }
+        .cardboard { fill: #D2B48C; }
+      ]]>
+    </style>
+  </defs>
+  ${clonedSvg.innerHTML}
+</svg>`;
+
+        const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${actualTotalWidth.toFixed(0)}x${actualTotalHeight.toFixed(0)}mm.svg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        // 清理URL对象
+        URL.revokeObjectURL(url);
+      }
+
+      // 页面加载时生成默认展开图
+      generateBoxCutout();
+    </script>
+  </body>
+</html>
